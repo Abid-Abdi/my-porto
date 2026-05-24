@@ -1,0 +1,22 @@
+.lanyard-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: auto;
+}
+
+.lanyard-embed {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: clamp(810px, 98dvh, 1755px);
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.lanyard-embed canvas,
+.lanyard-overlay canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
