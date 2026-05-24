@@ -5,16 +5,16 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-medium transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-medium transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--void)] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         default:
-          "bg-violet-500 text-white shadow-lg shadow-violet-500/25 hover:bg-violet-400 hover:shadow-violet-400/30",
+          "bg-accent text-white shadow-lg shadow-[var(--accent-glow)] hover:bg-accent-hover hover:shadow-[0_8px_32px_var(--accent-glow)]",
         outline:
-          "border border-white/10 bg-white/5 text-zinc-100 backdrop-blur-sm hover:border-violet-400/40 hover:bg-white/10",
+          "border border-border bg-[var(--accent-muted)] text-foreground-soft backdrop-blur-sm hover:border-[var(--border-hover)] hover:bg-[rgba(61,122,140,0.08)] hover:text-foreground",
         ghost:
-          "text-zinc-300 hover:bg-white/5 hover:text-white",
+          "text-muted hover:bg-white/[0.04] hover:text-foreground",
       },
       size: {
         default: "h-11 px-6",

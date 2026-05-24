@@ -1,19 +1,63 @@
 @import "tailwindcss";
 
+/*
+ * Cinematic dark theme — subtle Solo Leveling × ORV atmosphere
+ * SL: deep void, shadow purple, muted indigo aura
+ * ORV: cosmic navy, cold silver, muted cyan intelligence
+ */
+
 :root {
-  --background: #030712;
-  --foreground: #fafafa;
-  --muted: #a1a1aa;
-  --accent: #8b5cf6;
-  --card: rgba(255, 255, 255, 0.03);
-  --border: rgba(255, 255, 255, 0.08);
+  /* Base depths */
+  --void: #04050a;
+  --abyss: #060a12;
+  --surface: #0a101c;
+  --elevated: #0f1728;
+
+  /* Typography */
+  --foreground: #e8ecf4;
+  --foreground-soft: #c5cdd9;
+  --muted: #8b96a8;
+  --muted-deep: #5c6678;
+
+  /* SL — shadow monarch (purple-indigo, restrained) */
+  --shadow: #5b4d8f;
+  --shadow-soft: #6d5fa8;
+  --indigo-aura: #4f5eb8;
+
+  /* ORV — cosmic reader (navy-cyan, restrained) */
+  --cosmic: #3d7a8c;
+  --cosmic-soft: #5a9ead;
+  --star: #9aa8bc;
+
+  /* Merged accent system */
+  --accent: #6b7fd4;
+  --accent-hover: #7d8ee0;
+  --accent-muted: rgba(107, 127, 212, 0.14);
+  --accent-glow: rgba(91, 77, 143, 0.22);
+  --cosmic-glow: rgba(61, 122, 140, 0.12);
+
+  /* Surfaces & borders */
+  --background: var(--void);
+  --card: rgba(10, 16, 28, 0.72);
+  --border: rgba(138, 155, 185, 0.1);
+  --border-hover: rgba(107, 127, 212, 0.28);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-foreground-soft: var(--foreground-soft);
   --color-muted: var(--muted);
+  --color-muted-deep: var(--muted-deep);
   --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-shadow: var(--shadow);
+  --color-cosmic: var(--cosmic);
+  --color-star: var(--star);
+  --color-surface: var(--surface);
+  --color-elevated: var(--elevated);
+  --color-card: var(--card);
+  --color-border: var(--border);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -23,12 +67,38 @@ html {
 }
 
 body {
-  background: var(--background);
+  background-color: var(--abyss);
+  background-image:
+    radial-gradient(
+      ellipse 120% 80% at 50% -30%,
+      var(--accent-glow),
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse 70% 50% at 100% 50%,
+      var(--cosmic-glow),
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse 60% 40% at 0% 80%,
+      rgba(91, 77, 143, 0.06),
+      transparent 45%
+    );
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
 
 ::selection {
-  background: rgba(139, 92, 246, 0.35);
+  background: rgba(107, 127, 212, 0.32);
   color: #fff;
+}
+
+.project-carousel-mask {
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 6%,
+    #000 94%,
+    transparent
+  );
 }
