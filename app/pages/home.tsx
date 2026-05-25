@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import dynamic from "next/dynamic";
@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 
 import { siteConfig } from "@/config/site";
+import { Footer } from "@/components/footer";
+import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
 import { GitHubIcon } from "@/components/icons/social";
 
@@ -1431,12 +1433,16 @@ function ExperienceSection() {
 
 export default function HomePage() {
   return (
-    <main className="relative flex-1">
-      <HeroSection />
-      <AboutSection />
-      <ProjectsSection />
-      <ExperienceSection />
-      <ContactSection />
-    </main>
+    <>
+      <Header />
+      <main className="relative flex-1">
+        <HeroSection />
+        <AboutSection />
+        <ProjectsSection />
+        <ExperienceSection />
+        <ContactSection />
+      </main>
+      <Footer />
+    </>
   );
 }
