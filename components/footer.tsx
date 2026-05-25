@@ -1,21 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowUp, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 
+import { navLinks } from "@/config/navigation";
 import { siteConfig } from "@/config/site";
 import { GitHubIcon, LinkedInIcon } from "@/components/icons/social";
+import { easeOut } from "@/lib/motion";
 import { cn } from "@/lib/utils";
-
-const footerLinks = [
-  { label: "Home", href: "#hero" },
-  { label: "About", href: "#about" },
-  { label: "Projects", href: "#projects" },
-  { label: "Experience", href: "#experience" },
-  { label: "Contact", href: "#contact" },
-] as const;
 
 function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
@@ -49,7 +44,7 @@ function ThemeToggle() {
         key={isDark ? "moon" : "sun"}
         initial={{ opacity: 0, rotate: -20, scale: 0.85 }}
         animate={{ opacity: 1, rotate: 0, scale: 1 }}
-        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 0.35, ease: easeOut }}
       >
         {isDark ? <Sun className="size-4" /> : <Moon className="size-4" />}
       </motion.span>
@@ -59,11 +54,6 @@ function ThemeToggle() {
 
 export function Footer() {
   const year = new Date().getFullYear();
-
-  const scrollTo = (href: string) => {
-    const id = href.replace("#", "");
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -81,7 +71,7 @@ export function Footer() {
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-40px" }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.6, ease: easeOut }}
           className="mb-10 flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between"
         >
           <div className="max-w-md">
@@ -95,22 +85,21 @@ export function Footer() {
           </div>
 
           <nav aria-label="Footer navigation" className="flex flex-wrap gap-x-8 gap-y-3 sm:justify-end">
-            {footerLinks.map((link) => (
-              <button
+            {navLinks.map((link) => (
+              <Link
                 key={link.href}
-                type="button"
-                onClick={() => scrollTo(link.href)}
+                href={link.href}
                 className="text-sm text-muted transition-colors duration-300 hover:text-foreground-soft"
               >
-                {link.label}
-              </button>
+                {link.label === "About Me" ? "About" : link.label}
+              </Link>
             ))}
           </nav>
         </motion.div>
 
         <div className="mb-8 border-t border-border pt-8">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3" suppressHydrationWarning>
               <ThemeToggle />
               <span className="text-xs text-muted-deep">Theme</span>
             </div>
@@ -123,7 +112,7 @@ export function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className={cn(
-                    "inline-flex h-9 items-center gap-2 rounded-full border border-border px-3.5",
+                    "inline-flex h-9 items-center gap-2 rounded-lg border border-border px-3.5",
                     "bg-[var(--elevated)] text-xs font-medium text-muted transition-all duration-300",
                     "hover:border-[var(--border-hover)] hover:text-foreground-soft"
                   )}
@@ -141,7 +130,7 @@ export function Footer() {
               type="button"
               onClick={scrollToTop}
               className={cn(
-                "inline-flex h-9 items-center gap-2 rounded-full border border-border px-4",
+                "inline-flex h-9 items-center gap-2 rounded-lg border border-border px-4",
                 "text-xs font-medium text-muted transition-all duration-300",
                 "hover:border-[var(--border-hover)] hover:text-foreground-soft"
               )}

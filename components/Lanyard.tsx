@@ -23,7 +23,7 @@ import {
 import { MeshLineGeometry, MeshLineMaterial } from "meshline";
 import * as THREE from "three";
 
-import "../../css/Lanyard.css";
+import "../css/Lanyard.css";
 
 const CARD_GLB_URL = "/assets/lanyard/card.glb";
 const LANYARD_PNG_URL = "/assets/lanyard/lanyard.png";
@@ -199,17 +199,56 @@ function Band({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  const isFiniteVec3 = (v: { x: number; y: number; z: number }) =>
+    Number.isFinite(v.x) && Number.isFinite(v.y) && Number.isFinite(v.z);
+
+  const setPoint = (
+    point: THREE.Vector3,
+    t: { x: number; y: number; z: number } | THREE.Vector3 | undefined
+  ) => {
+    if (!t || !isFiniteVec3(t)) return false;
+    point.set(t.x, t.y, t.z);
+    return true;
+  };
+
+  const curveHasSpan = (points: THREE.Vector3[], minSpan = 1e-4) => {
+    for (let i = 0; i < points.length; i++) {
+      for (let j = i + 1; j < points.length; j++) {
+        if (points[i].distanceTo(points[j]) > minSpan) return true;
+      }
+    }
+    return false;
+  };
+
+  const safeSetBandPoints = (samples: THREE.Vector3[]) => {
+    if (samples.length < 2) return;
+    if (!samples.every((p) => isFiniteVec3(p))) return;
+    if (!curveHasSpan(samples, 1e-5)) return;
+
+    const geometry = (band.current as any)?.geometry;
+    if (!geometry?.setPoints) return;
+
+    try {
+      geometry.setPoints(samples);
+    } catch {
+      // Skip frame when meshline cannot build geometry (unstable physics)
+    }
+  };
+
   useFrame((state, delta) => {
     if (dragged) {
       vec.set(state.pointer.x, state.pointer.y, 0.5).unproject(state.camera);
       dir.copy(vec).sub(state.camera.position).normalize();
       vec.add(dir.multiplyScalar((state.camera as any).position.length()));
       [card, j1, j2, j3, fixed].forEach((ref) => ref.current?.wakeUp());
-      card.current?.setNextKinematicTranslation({
+      const dragTarget = {
         x: vec.x - dragged.x,
         y: vec.y - dragged.y,
         z: vec.z - dragged.z,
-      });
+      };
+      if (isFiniteVec3(dragTarget)) {
+        card.current?.setNextKinematicTranslation(dragTarget);
+      }
     }
 
     if (
@@ -223,43 +262,43 @@ function Band({
       return;
     }
 
-    const setPoint = (
-      point: THREE.Vector3,
-      t: { x: number; y: number; z: number }
-    ) => {
-      if (!Number.isFinite(t.x) || !Number.isFinite(t.y) || !Number.isFinite(t.z))
-        return false;
-      point.set(t.x, t.y, t.z);
-      return true;
-    };
-
     [j1, j2].forEach((ref) => {
       const body = ref.current;
+      if (!body) return;
       const pos = body.translation();
-      if (!Number.isFinite(pos.x) || !Number.isFinite(pos.y) || !Number.isFinite(pos.z))
+      if (!isFiniteVec3(pos)) return;
+      if (!body.lerped) {
+        body.lerped = new THREE.Vector3(pos.x, pos.y, pos.z);
         return;
-      if (!body.lerped) body.lerped = new THREE.Vector3(pos.x, pos.y, pos.z);
-      const clampedDistance = Math.max(0.1, Math.min(1, body.lerped.distanceTo(pos)));
-      body.lerped.lerp(pos, delta * (minSpeed + clampedDistance * (maxSpeed - minSpeed)));
+      }
+      const clampedDistance = Math.max(
+        0.1,
+        Math.min(1, body.lerped.distanceTo(pos))
+      );
+      body.lerped.lerp(
+        pos,
+        delta * (minSpeed + clampedDistance * (maxSpeed - minSpeed))
+      );
+      if (!isFiniteVec3(body.lerped)) {
+        body.lerped.set(pos.x, pos.y, pos.z);
+      }
     });
+
+    const j1Lerped = j1.current.lerped as THREE.Vector3 | undefined;
+    const j2Lerped = j2.current.lerped as THREE.Vector3 | undefined;
+    if (!j1Lerped || !j2Lerped) return;
 
     const curvePoints = (curve as any).points as THREE.Vector3[];
     const pointsValid =
       setPoint(curvePoints[0], j3.current.translation()) &&
-      setPoint(curvePoints[1], j2.current.lerped) &&
-      setPoint(curvePoints[2], j1.current.lerped) &&
+      setPoint(curvePoints[1], j2Lerped) &&
+      setPoint(curvePoints[2], j1Lerped) &&
       setPoint(curvePoints[3], fixed.current.translation());
 
-    if (!pointsValid) return;
+    if (!pointsValid || !curveHasSpan(curvePoints)) return;
 
     const samples = (curve as any).getPoints(isSmall ? 16 : 32) as THREE.Vector3[];
-    const samplesValid = samples.every(
-      (p) => Number.isFinite(p.x) && Number.isFinite(p.y) && Number.isFinite(p.z)
-    );
-
-    if (samplesValid) {
-      (band.current as any).geometry.setPoints(samples);
-    }
+    safeSetBandPoints(samples);
 
     const angVel = card.current.angvel();
     const cardRot = card.current.rotation();
