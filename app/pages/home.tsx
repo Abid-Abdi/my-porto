@@ -1,11 +1,18 @@
-"use client";
+﻿"use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { ArrowDownToLine, ArrowUpRight, MapPin } from "lucide-react";
+import {
+  ArrowDownToLine,
+  ArrowUpRight,
+  CheckCircle2,
+  Mail,
+  MapPin,
+  Send,
+} from "lucide-react";
 
 import { siteConfig } from "@/config/site";
 import { Button } from "@/components/ui/button";
@@ -180,7 +187,7 @@ const experiences: ExperienceItem[] = [
     period: "Mar 2024 – May 2024",
     description:
       "Supported workshop operations and live coding demos for peer learning sessions on web fundamentals, version control, and introductory API concepts.",
-    tech: ["HTML", "CSS", "JavaScript", "Git", "GitHub"],
+    tech: ["HTML", "CSS", "JavaScript", "Git", "GitHub", "Webpack"],
   },
 ];
 
@@ -212,6 +219,525 @@ const aboutJourney = [
       "Deepening fullstack and mobile craft while staying curious about data, AI, and infrastructure as the industry evolves.",
   },
 ];
+
+const CONTACT_EMAIL = "AbidAbdillah3.14@gmail.com";
+
+/** Set when wiring Resend, Formspree, or /api/contact */
+const CONTACT_API_ENDPOINT: string | undefined = undefined;
+
+type ContactFormData = {
+  fullName: string;
+  email: string;
+  company: string;
+  inquiryType: string;
+  subject: string;
+  message: string;
+};
+
+const initialContactForm: ContactFormData = {
+  fullName: "",
+  email: "",
+  company: "",
+  inquiryType: "general",
+  subject: "",
+  message: "",
+};
+
+const inquiryOptions = [
+  { value: "recruitment", label: "Recruitment / hiring" },
+  { value: "collaboration", label: "Project collaboration" },
+  { value: "freelance", label: "Freelance work" },
+  { value: "general", label: "General inquiry" },
+] as const;
+
+type Testimonial = {
+  id: string;
+  name: string;
+  role: string;
+  company: string;
+  quote: string;
+  initials: string;
+};
+
+const testimonials: Testimonial[] = [
+  {
+    id: "recruiter-1",
+    name: "Rina Wijaya",
+    role: "Technical Recruiter",
+    company: "Makassar Digital Talent",
+    quote:
+      "Clear communication and a thoughtful approach to problem-solving. His portfolio and camp background showed strong fundamentals—we moved forward with an interview.",
+    initials: "RW",
+  },
+  {
+    id: "client-1",
+    name: "Andi Pratama",
+    role: "Small Business Owner",
+    company: "Local Retail Client",
+    quote:
+      "Delivered a clean landing page on time and handled revision rounds without friction. Professional, responsive, and easy to work with.",
+    initials: "AP",
+  },
+  {
+    id: "collab-1",
+    name: "Siti Nurhaliza",
+    role: "UI Designer",
+    company: "University Product Team",
+    quote:
+      "Translated designs into React components with good attention to spacing and states. A reliable teammate during our capstone sprint.",
+    initials: "SN",
+  },
+  {
+    id: "team-1",
+    name: "Fajar Hidayat",
+    role: "Peer Developer",
+    company: "Campus IT Division",
+    quote:
+      "Consistent with Git workflow and code reviews. Helped stabilize our event registration flow before a major campus launch.",
+    initials: "FH",
+  },
+];
+
+const inputClassName =
+  "w-full rounded-lg border border-border bg-[var(--elevated)] px-4 py-3 text-sm text-foreground placeholder:text-muted-deep transition-[border-color,box-shadow] duration-300 focus:border-[var(--border-hover)] focus:outline-none focus:ring-1 focus:ring-accent/25 disabled:cursor-not-allowed disabled:opacity-60";
+
+function buildMailtoPayload(data: ContactFormData) {
+  const inquiryLabel =
+    inquiryOptions.find((o) => o.value === data.inquiryType)?.label ??
+    data.inquiryType;
+  const subject = data.subject.trim() || `Portfolio inquiry — ${inquiryLabel}`;
+  const body = [
+    `Name: ${data.fullName.trim()}`,
+    `Email: ${data.email.trim()}`,
+    data.company.trim() ? `Organization: ${data.company.trim()}` : null,
+    `Inquiry type: ${inquiryLabel}`,
+    "",
+    data.message.trim(),
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  return {
+    subject: encodeURIComponent(subject),
+    body: encodeURIComponent(body),
+  };
+}
+
+async function deliverContactMessage(data: ContactFormData): Promise<void> {
+  if (CONTACT_API_ENDPOINT) {
+    const res = await fetch(CONTACT_API_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...data,
+        to: CONTACT_EMAIL,
+        replyTo: data.email.trim(),
+      }),
+    });
+    if (!res.ok) {
+      throw new Error("Unable to send message. Please try again.");
+    }
+    return;
+  }
+
+  const { subject, body } = buildMailtoPayload(data);
+  const mailto = `mailto:${CONTACT_EMAIL}?subject=${subject}&body=${body}`;
+  window.location.href = mailto;
+}
+
+function StarRating({ count = 5 }: { count?: number }) {
+  return (
+    <div
+      className="flex gap-0.5"
+      aria-label={`${count} out of 5`}
+      role="img"
+    >
+      {Array.from({ length: count }).map((_, i) => (
+        <span
+          key={i}
+          className="h-1 w-1 rounded-full bg-accent/70"
+          aria-hidden
+        />
+      ))}
+    </div>
+  );
+}
+
+function TestimonialCard({ entry }: { entry: Testimonial }) {
+  return (
+    <motion.blockquote
+      variants={item}
+      initial={false}
+      className="group rounded-2xl border border-border bg-[var(--card)] p-5 transition-all duration-500 hover:border-[var(--border-hover)] hover:shadow-[0_16px_40px_-24px_var(--accent-glow)] sm:p-6"
+    >
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-[var(--elevated)] text-xs font-semibold tracking-wide text-accent/90"
+            aria-hidden
+          >
+            {entry.initials}
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-foreground">{entry.name}</p>
+            <p className="text-xs text-muted">
+              {entry.role} · {entry.company}
+            </p>
+          </div>
+        </div>
+        <StarRating />
+      </div>
+      <p className="text-sm leading-relaxed text-muted">&ldquo;{entry.quote}&rdquo;</p>
+    </motion.blockquote>
+  );
+}
+
+function ContactForm() {
+  const [form, setForm] = useState<ContactFormData>(initialContactForm);
+  const [status, setStatus] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const updateField = <K extends keyof ContactFormData>(
+    key: K,
+    value: ContactFormData[K]
+  ) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+    if (status === "error") {
+      setStatus("idle");
+      setErrorMessage(null);
+    }
+  };
+
+  const isValid =
+    form.fullName.trim().length > 1 &&
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()) &&
+    form.message.trim().length >= 10;
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!isValid || status === "loading") return;
+
+    setStatus("loading");
+    setErrorMessage(null);
+
+    try {
+      await new Promise((r) => setTimeout(r, 600));
+      await deliverContactMessage(form);
+      setStatus("success");
+      setForm(initialContactForm);
+    } catch (err) {
+      setStatus("error");
+      setErrorMessage(
+        err instanceof Error ? err.message : "Something went wrong."
+      );
+    }
+  };
+
+  return (
+    <motion.div
+      variants={item}
+      initial={false}
+      className="relative overflow-hidden rounded-2xl border border-border bg-[var(--card)] p-6 sm:p-8"
+    >
+      <div
+        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_70%_50%_at_0%_0%,var(--accent-glow),transparent_55%)]"
+        aria-hidden
+      />
+
+      <div className="mb-6 flex items-start gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-[var(--elevated)] text-accent/90">
+          <Mail className="size-4" aria-hidden />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold tracking-tight text-foreground">
+            Send a message
+          </h3>
+          <p className="mt-1 text-sm text-muted">
+            Submissions open your email client addressed to me—like writing
+            directly, without a middle layer.
+          </p>
+        </div>
+      </div>
+
+      {status === "success" ? (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-accent/30 bg-[var(--accent-muted)] text-accent">
+            <CheckCircle2 className="size-7" aria-hidden />
+          </div>
+          <p className="text-lg font-semibold text-foreground">Ready to send</p>
+          <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted">
+            Your email app should open with the message pre-filled. If it
+            didn&apos;t, you can reach me at{" "}
+            <a
+              href={`mailto:${CONTACT_EMAIL}`}
+              className="text-accent/90 underline-offset-4 hover:underline"
+            >
+              {CONTACT_EMAIL}
+            </a>
+            .
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-6"
+            onClick={() => setStatus("idle")}
+          >
+            Send another message
+          </Button>
+        </div>
+      ) : (
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-4"
+          noValidate
+        >
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="contact-name"
+                  className="text-xs font-medium tracking-wide text-muted"
+                >
+                  Full name <span className="text-accent/80">*</span>
+                </label>
+                <input
+                  id="contact-name"
+                  name="fullName"
+                  type="text"
+                  required
+                  autoComplete="name"
+                  value={form.fullName}
+                  onChange={(e) => updateField("fullName", e.target.value)}
+                  placeholder="Your name"
+                  className={inputClassName}
+                  disabled={status === "loading"}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="contact-email"
+                  className="text-xs font-medium tracking-wide text-muted"
+                >
+                  Email <span className="text-accent/80">*</span>
+                </label>
+                <input
+                  id="contact-email"
+                  name="email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  value={form.email}
+                  onChange={(e) => updateField("email", e.target.value)}
+                  placeholder="you@company.com"
+                  className={inputClassName}
+                  disabled={status === "loading"}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="contact-company"
+                  className="text-xs font-medium tracking-wide text-muted"
+                >
+                  Company / organization
+                </label>
+                <input
+                  id="contact-company"
+                  name="company"
+                  type="text"
+                  autoComplete="organization"
+                  value={form.company}
+                  onChange={(e) => updateField("company", e.target.value)}
+                  placeholder="Optional"
+                  className={inputClassName}
+                  disabled={status === "loading"}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="contact-inquiry"
+                  className="text-xs font-medium tracking-wide text-muted"
+                >
+                  Inquiry type
+                </label>
+                <select
+                  id="contact-inquiry"
+                  name="inquiryType"
+                  value={form.inquiryType}
+                  onChange={(e) => updateField("inquiryType", e.target.value)}
+                  className={`${inputClassName} cursor-pointer appearance-none bg-[var(--elevated)]`}
+                  disabled={status === "loading"}
+                >
+                  {inquiryOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label
+                htmlFor="contact-subject"
+                className="text-xs font-medium tracking-wide text-muted"
+              >
+                Subject
+              </label>
+              <input
+                id="contact-subject"
+                name="subject"
+                type="text"
+                value={form.subject}
+                onChange={(e) => updateField("subject", e.target.value)}
+                placeholder="What would you like to discuss?"
+                className={inputClassName}
+                disabled={status === "loading"}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label
+                htmlFor="contact-message"
+                className="text-xs font-medium tracking-wide text-muted"
+              >
+                Message <span className="text-accent/80">*</span>
+              </label>
+              <textarea
+                id="contact-message"
+                name="message"
+                required
+                rows={5}
+                value={form.message}
+                onChange={(e) => updateField("message", e.target.value)}
+                placeholder="Share context about the role, project, or collaboration..."
+                className={`${inputClassName} resize-y min-h-[120px]`}
+                disabled={status === "loading"}
+              />
+            </div>
+
+            {status === "error" && errorMessage && (
+              <p className="text-sm text-red-400/90" role="alert">
+                {errorMessage}
+              </p>
+            )}
+
+            <Button
+              type="submit"
+              size="lg"
+              className="w-full sm:w-auto"
+              disabled={!isValid || status === "loading"}
+            >
+              {status === "loading" ? (
+                <>
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Send className="size-4" aria-hidden />
+                  Send message
+                </>
+              )}
+            </Button>
+        </form>
+      )}
+    </motion.div>
+  );
+}
+
+function ContactSection() {
+  return (
+    <section
+      id="contact"
+      className="relative border-t border-border px-4 py-24 sm:px-6 sm:py-28 lg:px-8 lg:py-32"
+      aria-labelledby="contact-heading"
+    >
+      <div
+        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_60%_50%_at_50%_100%,var(--accent-glow),transparent_55%)]"
+        aria-hidden
+      />
+
+      <div className="mx-auto max-w-6xl">
+        <motion.div
+          variants={container}
+          initial={false}
+          whileInView="show"
+          viewport={aboutViewport}
+          className="mb-12 max-w-2xl lg:mb-14"
+        >
+          <motion.p
+            variants={item}
+            className="mb-4 text-sm font-medium uppercase tracking-[0.2em] text-accent/90"
+          >
+            Contact
+          </motion.p>
+          <motion.h2
+            id="contact-heading"
+            variants={item}
+            className="mb-4 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl"
+          >
+            Let&apos;s build something meaningful
+          </motion.h2>
+          <motion.p variants={item} className="text-base leading-relaxed text-muted md:text-lg">
+            Open to internships, collaborations, and thoughtful conversations
+            with recruiters, teams, and clients. Reach out—I typically respond
+            within a few business days.
+          </motion.p>
+        </motion.div>
+
+        <div className="grid gap-10 lg:grid-cols-2 lg:gap-12 xl:gap-16">
+          <motion.div
+            variants={container}
+            initial={false}
+            whileInView="show"
+            viewport={aboutViewport}
+          >
+            <ContactForm />
+            <motion.p
+              variants={item}
+              className="mt-4 text-center text-xs text-muted-deep sm:text-left"
+            >
+              Prefer email directly?{" "}
+              <a
+                href={`mailto:${CONTACT_EMAIL}`}
+                className="text-accent/90 underline-offset-4 transition-colors hover:text-accent hover:underline"
+              >
+                {CONTACT_EMAIL}
+              </a>
+            </motion.p>
+          </motion.div>
+
+          <motion.div
+            variants={container}
+            initial={false}
+            whileInView="show"
+            viewport={aboutViewport}
+            className="flex flex-col"
+          >
+            <motion.div variants={item} className="mb-6">
+              <h3 className="text-lg font-semibold tracking-tight text-foreground">
+                What others say
+              </h3>
+              <p className="mt-1 text-sm text-muted">
+                Impressions from collaboration, client work, and peer feedback.
+              </p>
+            </motion.div>
+            <div className="flex flex-col gap-4">
+              {testimonials.map((entry) => (
+                <TestimonialCard key={entry.id} entry={entry} />
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 function HeroBackground() {
   return (
@@ -910,7 +1436,7 @@ export default function HomePage() {
       <AboutSection />
       <ProjectsSection />
       <ExperienceSection />
-      <section id="contact" className="min-h-[40vh]" aria-hidden />
+      <ContactSection />
     </main>
   );
 }
